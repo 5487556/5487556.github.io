@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>糾察帳本網站</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <lnik rel="stylesheet" type="text/css" href="klik.css"></lnik>
+    
+</head>
+<body>
+
+    
+    <header>
+        <h1>糾察帳本</h1>
+    </header>
+    
+    <nav>
+        <ul>
+            <li><a href="#">首頁</a></li>
+            <li><a href="#">添加交易</a></li>
+            <li><a href="#">查看報表</a></li>
+            <li><a href="#">設定</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h2>歡迎來到糾察隊帳本管理系統</h2>
+        <p>在這裡你可以管理糾察隊的財務狀況。</p>
+
+        <h3>現金餘額</h3>
+        <p id="cash-balance">0 元</p> <!-- 初始現金餘額，這裡可根據實際情況設置初始值 -->
+
+        <h3>添加一筆交易</h3>
+        <form id="transaction-form">
+            <label for="date">日期:</label>
+            <input type="date" id="date" name="date" required>
+
+            <label for="description">描述:</label>
+            <input type="text" id="description" name="description" required>
+
+            <label for="amount">金額:</label>
+            <input type="number" id="amount" name="amount" required>
+
+            <label for="type">類型:</label>
+            <select id="type" name="type" required>
+                <option value="income">收入</option>
+                <option value="expense">支出</option>
+            </select>
+
+            <input type="submit" value="添加">
+        </form>
+
+        <h3>交易紀錄</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>描述</th>
+                    <th>金額</th>
+                    <th>類型</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 這裡會動態生成交易紀錄 -->
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <a href="#">&laquo; 上一頁</a>
+            <a href="#" class="active">1</a>
+            <a href="#">2</a>
+            <a href="#">3</a>
+            <a href="#">下一頁 &raquo;</a>
+        </div>
+    </div>
+    <script src="klik.js"></script>
+    <footer>
+        <p>&copy; 糾察帳本網站</p>
+    </footer>
+
+    <script src="money.js"></script>
+
+</body>
+<script src="back.js"></script>
+</html>
