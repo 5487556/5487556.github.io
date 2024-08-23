@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>糾察帳本網站</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+
+</head>
+
+<body>
+
+    <header>
+        <h1>糾察帳本</h1>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="index.html">首頁</a></li>
+            <li><a href="money.html">資金管理</a></li>
+            <li><a href="about.html">關於我們</a></li>
+            <li><a href="contact.html">聯絡我們</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h2>歡迎來到糾察隊帳本管理系統</h2>
+        <p>在這裡你可以管理糾察隊的財務狀況。</p>
+
+        <h3>現金餘額</h3>
+        <p id="cash-balance">0 元</p> <!-- 初始現金餘額，這裡可根據實際情況設置初始值 -->
+
+        <h3>添加一筆交易</h3>
+        <form id="transaction-form">
+            <label for="date">日期:</label>
+            <input type="date" id="date" name="date" required>
+
+            <label for="description">描述:</label>
+            <input type="text" id="description" name="description" required>
+
+            <label for="amount">金額:</label>
+            <input type="number" id="amount" name="amount" required>
+
+            <label for="type">類型:</label>
+            <select id="type" name="type" required>
+                <option value="income">收入</option>
+                <option value="expense">支出</option>
+            </select>
+
+            <input type="submit" value="添加">
+        </form>
+
+        <h3>交易紀錄</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>描述</th>
+                    <th>金額</th>
+                    <th>類型</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 這裡會動態生成交易紀錄 -->
+            </tbody>
+        </table>
+
+    </div>
+    <script src="back.js"></script>
+    <footer>
+        <p>&copy; 糾察帳本網站</p>
+    </footer>
+    <script src="money.js"></script>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyBN2EO-PDit2EoNoS2kgMiYXMM09IH_6aE",
+          authDomain: "ledger-aa613.firebaseapp.com",
+          projectId: "ledger-aa613",
+          storageBucket: "ledger-aa613.appspot.com",
+          messagingSenderId: "451355459198",
+          appId: "1:451355459198:web:1ff6682a67cdbbe07ea22f",
+          measurementId: "G-SP81FMD7R1"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Function to render transaction data to the table
+        function renderTransaction(doc) {
+            const data = doc.data();
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${data.date}</td>
+                <td>${data.description}</td>
+                <td>${data.amount} 元</td>
+                <td>${data.type === 'income' ? '收入' : '支出'}</td>
+                <td><button>刪除</button></td>
+            `;
+            document.querySelector('tbody').appendChild(row);
+        }
+
+        // Real-time listener to fetch data from Firestore and update the UI
+        onSnapshot(collection(db, "transactions"), (snapshot) => {
+            const transactionList = document.querySelector('tbody');
+            transactionList.innerHTML = ""; // 清空現有的表格內容
+
+            snapshot.forEach((doc) => {
+                renderTransaction(doc);
+            });
+        });
+
+        // Add a new transaction to Firestore when the form is submitted
+        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const date = document.getElementById('date').value;
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+
+            // Add the transaction to the Firestore collection
+            const docRef = await collection(db, "transactions").add({
+                date,
+                description,
+                amount,
+                type
+            });
+
+            // Clear the form
+            document.getElementById('transaction-form').reset();
+        });
+    </script>
+
+</body>
+
+</html>
