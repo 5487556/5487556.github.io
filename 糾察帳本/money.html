@@ -107,31 +107,20 @@
             `;
             document.querySelector('tbody').appendChild(row);
 
-            // Update cash balance
-            if (data.type === 'income') {
-                cashBalance += data.amount;
-            } else if (data.type === 'expense') {
-                cashBalance -= data.amount;
-            }
-            updateCashBalance();
-
             // Add event listener for the delete button
             row.querySelector('button').addEventListener('click', async (e) => {
                 const id = e.target.getAttribute('data-id');
                 await deleteDoc(doc(db, "transactions", id));
-                document.querySelector('tbody').removeChild(row);
-                if (data.type === 'income') {
-                    cashBalance -= data.amount;
-                } else if (data.type === 'expense') {
-                    cashBalance += data.amount;
-                }
-                updateCashBalance();
+                calculateAndRenderBalance(); // Recalculate and update balance after deletion
             });
         }
 
-        // Function to calculate and update the initial cash balance
-        async function calculateInitialBalance() {
+        // Function to calculate and update the balance
+        async function calculateAndRenderBalance() {
+            cashBalance = 0; // Reset cash balance
             const querySnapshot = await getDocs(collection(db, "transactions"));
+            document.querySelector('tbody').innerHTML = ""; // Clear existing table rows
+            
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
                 if (data.type === 'income') {
@@ -139,20 +128,14 @@
                 } else if (data.type === 'expense') {
                     cashBalance -= data.amount;
                 }
+                renderTransaction(doc);
             });
             updateCashBalance();
         }
 
         // Real-time listener to fetch data from Firestore and update the UI
         onSnapshot(collection(db, "transactions"), (snapshot) => {
-            const transactionList = document.querySelector('tbody');
-            
-
-            cashBalance = 0; // Reset cash balance before recalculating
-
-            snapshot.forEach((doc) => {
-                renderTransaction(doc);
-            });
+            calculateAndRenderBalance(); // Recalculate balance on any change in transactions
         });
 
         // Add a new transaction to Firestore when the form is submitted
@@ -176,10 +159,11 @@
             }
 
             document.getElementById('transaction-form').reset();
+            calculateAndRenderBalance(); // Recalculate balance after adding a new transaction
         });
 
         // Calculate initial balance on page load
-        calculateInitialBalance();
+        calculateAndRenderBalance();
     </script>
 </body>
 </html>
