@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入</title>
+    <link rel="stylesheet" type="text/css" href="style2.css">
+</head>
+
+<body>
+    <div class="login-container">
+        <h2>帳本系統登入</h2>
+        <form id="login-form">
+            <label for="username">用戶名:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">密碼:</label>
+            <input type="password" id="password" name="password" required>
+
+            <input type="submit" value="登入">
+        </form>
+        <p>沒有帳號？<a href="register.html">註冊</a></p>
+    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfl3_gvgBLwGulnRywmEg2VJdvb_7pCtw",
+            authDomain: "user-63855.firebaseapp.com",
+            projectId: "user-63855",
+            storageBucket: "user-63855.appspot.com",
+            messagingSenderId: "51510459160",
+            appId: "1:51510459160:web:65277cc04759460ee73c6d",
+            measurementId: "G-5430BVYG68"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const form = document.getElementById('login-form');
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Authenticate user
+            authenticateUser(username, password);
+        });
+
+
+        // ...
+
+        async function authenticateUser(username, password) {
+            try {
+                const usersRef = collection(db, 'users');
+                const querySnapshot = await getDocs(usersRef);
+
+                let userFound = false;
+                querySnapshot.forEach((doc) => {
+                    if (doc.data().username === username && doc.data().password === password) {
+                        userFound = true;
+                        console.log('登入成功！');
+
+                        // 將用戶名存儲在Session Storage中
+                        sessionStorage.setItem('currentUser', username);
+
+                        window.location.href = 'money.html'; // 將用戶重定向到 money.html 頁面
+                        return;
+                    }
+                });
+
+                if (!userFound) {
+                    console.error('登入失敗：用戶名或密碼錯誤！');
+                    alert('登入失敗：用戶名或密碼錯誤！');
+                }
+            } catch (error) {
+                console.error('登入失敗：', error);
+                alert('登入失敗：' + error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

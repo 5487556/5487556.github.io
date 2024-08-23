@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>註冊</title>
+    <link rel="stylesheet" type="text/css" href="style2.css">
+</head>
+
+<body>
+    <div class="register-container">
+        <h2>帳本系統註冊</h2>
+        <form id="register-form">
+            <label for="username">用戶名:</label>
+            <input type="text" id="username" name="username" required>
+
+            <label for="password">密碼:</label>
+            <input type="password" id="password" name="password" required>
+
+            <input type="submit" value="註冊">
+        </form>
+        <p>已經有帳號？<a href="index.html">登入</a></p>
+    </div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfl3_gvgBLwGulnRywmEg2VJdvb_7pCtw",
+            authDomain: "user-63855.firebaseapp.com",
+            projectId: "user-63855",
+            storageBucket: "user-63855.appspot.com",
+            messagingSenderId: "51510459160",
+            appId: "1:51510459160:web:65277cc04759460ee73c6d",
+            measurementId: "G-5430BVYG68"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Get the form element
+        const form = document.getElementById('register-form');
+
+        // Add an event listener to the form
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Get the username and password values
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Add the user to the Firestore database
+            addDoc(collection(db, 'users'), {
+                username: username,
+                password: password
+            })
+                .then((docRef) => {
+                    console.log('用戶添加成功！');
+                    // You can redirect the user to a login page or show a success message here
+                    alert('用戶添加成功！');
+                })
+                .catch((error) => {
+                    console.error('添加用戶錯誤：', error);
+                    alert('添加用戶錯誤：' + error.message);
+                });
+        });
+    </script>
+
+</body>
+
+</html>
