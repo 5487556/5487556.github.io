@@ -6,12 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>糾察帳本網站</title>
     <link rel="stylesheet" type="text/css" href="style.css">
-
-
 </head>
 
 <body>
-
     <header>
         <h1>糾察帳本</h1>
     </header>
@@ -67,33 +64,35 @@
                 <!-- 這裡會動態生成交易紀錄 -->
             </tbody>
         </table>
-
     </div>
-    <script src="back.js"></script>
+
     <footer>
         <p>&copy; 糾察帳本網站</p>
     </footer>
-    <script src="money.js"></script>
 
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-        // Firebase configuration
         const firebaseConfig = {
-          apiKey: "AIzaSyBN2EO-PDit2EoNoS2kgMiYXMM09IH_6aE",
-          authDomain: "ledger-aa613.firebaseapp.com",
-          projectId: "ledger-aa613",
-          storageBucket: "ledger-aa613.appspot.com",
-          messagingSenderId: "451355459198",
-          appId: "1:451355459198:web:1ff6682a67cdbbe07ea22f",
-          measurementId: "G-SP81FMD7R1"
+            apiKey: "AIzaSyBN2EO-PDit2EoNoS2kgMiYXMM09IH_6aE",
+            authDomain: "ledger-aa613.firebaseapp.com",
+            projectId: "ledger-aa613",
+            storageBucket: "ledger-aa613.appspot.com",
+            messagingSenderId: "451355459198",
+            appId: "1:451355459198:web:1ff6682a67cdbbe07ea22f",
+            measurementId: "G-SP81FMD7R1"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+
+        let cashBalance = 0;
+
+        // Function to update the displayed cash balance
+        function updateCashBalance() {
+            document.getElementById('cash-balance').textContent = `${cashBalance} 元`;
+        }
 
         // Function to render transaction data to the table
         function renderTransaction(doc) {
@@ -104,15 +103,52 @@
                 <td>${data.description}</td>
                 <td>${data.amount} 元</td>
                 <td>${data.type === 'income' ? '收入' : '支出'}</td>
-                <td><button>刪除</button></td>
+                <td><button data-id="${doc.id}">刪除</button></td>
             `;
             document.querySelector('tbody').appendChild(row);
+
+            // Update cash balance
+            if (data.type === 'income') {
+                cashBalance += data.amount;
+            } else if (data.type === 'expense') {
+                cashBalance -= data.amount;
+            }
+            updateCashBalance();
+
+            // Add event listener for the delete button
+            row.querySelector('button').addEventListener('click', async (e) => {
+                const id = e.target.getAttribute('data-id');
+                await deleteDoc(doc(db, "transactions", id));
+                document.querySelector('tbody').removeChild(row);
+                if (data.type === 'income') {
+                    cashBalance -= data.amount;
+                } else if (data.type === 'expense') {
+                    cashBalance += data.amount;
+                }
+                updateCashBalance();
+            });
+        }
+
+        // Function to calculate and update the initial cash balance
+        async function calculateInitialBalance() {
+            const querySnapshot = await getDocs(collection(db, "transactions"));
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.type === 'income') {
+                    cashBalance += data.amount;
+                } else if (data.type === 'expense') {
+                    cashBalance -= data.amount;
+                }
+            });
+            updateCashBalance();
         }
 
         // Real-time listener to fetch data from Firestore and update the UI
         onSnapshot(collection(db, "transactions"), (snapshot) => {
             const transactionList = document.querySelector('tbody');
-            transactionList.innerHTML = ""; // 清空現有的表格內容
+            
+
+            cashBalance = 0; // Reset cash balance before recalculating
 
             snapshot.forEach((doc) => {
                 renderTransaction(doc);
@@ -120,29 +156,30 @@
         });
 
         // Add a new transaction to Firestore when the form is submitted
-    try{
         document.getElementById('transaction-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-
+            
             const date = document.getElementById('date').value;
             const description = document.getElementById('description').value;
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.getElementById('type').value;
 
-            // Add the transaction to the Firestore collection
-            const docRef = await collection(db, "transactions").add({
-                date,
-                description,
-                amount,
-                type
-            });
+            try {
+                await addDoc(collection(db, "transactions"), {
+                    date,
+                    description,
+                    amount,
+                    type
+                });
+            } catch (error) {
+                console.error("Error adding transaction: ", error);
+            }
 
-            // Clear the form
             document.getElementById('transaction-form').reset();
         });
-    }
+
+        // Calculate initial balance on page load
+        calculateInitialBalance();
     </script>
-
 </body>
-
 </html>
