@@ -120,6 +120,7 @@
         });
 
         // Add a new transaction to Firestore when the form is submitted
+    try{
         document.getElementById('transaction-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -139,6 +140,7 @@
             // Clear the form
             document.getElementById('transaction-form').reset();
         });
+    }
     </script>
 
 </body>
