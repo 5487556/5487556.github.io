@@ -135,7 +135,12 @@
 
         // Real-time listener to fetch data from Firestore and update the UI
         onSnapshot(collection(db, "transactions"), (snapshot) => {
-            calculateAndRenderBalance(); // Recalculate balance on any change in transactions
+            // Only re-render the transactions list, do not update the balance
+            const transactionList = document.querySelector('tbody');
+            transactionList.innerHTML = "";
+            snapshot.forEach((doc) => {
+                renderTransaction(doc);
+            });
         });
 
         // Add a new transaction to Firestore when the form is submitted
@@ -154,12 +159,12 @@
                     amount,
                     type
                 });
+                calculateAndRenderBalance(); // Recalculate balance after adding a new transaction
             } catch (error) {
                 console.error("Error adding transaction: ", error);
             }
 
             document.getElementById('transaction-form').reset();
-            calculateAndRenderBalance(); // Recalculate balance after adding a new transaction
         });
 
         // Calculate initial balance on page load
