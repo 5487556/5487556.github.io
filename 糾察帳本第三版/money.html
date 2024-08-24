@@ -83,38 +83,42 @@
 
         let cashBalance = 0;
 
-        // 更新顯示的現金餘額
         function updateCashBalance() {
             document.getElementById('cash-balance').textContent = `${cashBalance} 元`;
         }
 
-        // 將交易數據渲染到表格中
         function renderTransaction(doc) {
             const data = doc.data();
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${data.date}</td>
-                <td>${data.description}</td>
-                <td>${data.amount} 元</td>
-                <td>${data.type === 'income' ? '收入' : '支出'}</td>
-                <td>${data.username}</td>
-                <td><button data-id="${doc.id}">編輯</button></td>
-            `;
+            <td>${data.date}</td>
+            <td>${data.description}</td>
+            <td>${data.amount} 元</td>
+            <td>${data.type === 'income' ? '收入' : '支出'}</td>
+            <td>${data.username}</td>
+            <td><button data-id="${doc.id}" data-username="${data.username}">編輯</button></td>
+        `;
             document.querySelector('tbody').appendChild(row);
 
-            // 添加編輯按鈕的事件監聽器
-            row.querySelector('button').addEventListener('click', () => {
-                document.getElementById('transaction-id').value = doc.id;
-                document.getElementById('date').value = data.date;
-                document.getElementById('description').value = data.description;
-                document.getElementById('amount').value = data.amount;
-                document.getElementById('type').value = data.type;
+            row.querySelector('button').addEventListener('click', (e) => {
+                const currentUser = sessionStorage.getItem('currentUser');
+                const transactionUser = e.target.getAttribute('data-username');
+
+                // 允许 @961004 特权用户编辑任何交易
+                if (currentUser === transactionUser || currentUser === "@961004") {
+                    document.getElementById('transaction-id').value = doc.id;
+                    document.getElementById('date').value = data.date;
+                    document.getElementById('description').value = data.description;
+                    document.getElementById('amount').value = data.amount;
+                    document.getElementById('type').value = data.type;
+                } else {
+                    alert("您只能編輯自己的交易記錄。");
+                }
             });
         }
 
-        // 計算並更新餘額
         async function calculateAndRenderBalance() {
-            cashBalance = 0; // 重置現金餘額
+            cashBalance = 0;
             const querySnapshot = await getDocs(collection(db, "transactions"));
             const transactions = [];
 
@@ -126,10 +130,9 @@
                 });
             });
 
-            // 按日期從新到舊排序
             transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            document.querySelector('tbody').innerHTML = ""; // 清空現有的表格行
+            document.querySelector('tbody').innerHTML = "";
 
             transactions.forEach((transaction) => {
                 if (transaction.type === 'income') {
@@ -146,7 +149,6 @@
             updateCashBalance();
         }
 
-        // 實時監聽並更新交易記錄
         onSnapshot(collection(db, "transactions"), (snapshot) => {
             const transactionList = document.querySelector('tbody');
             transactionList.innerHTML = "";
@@ -155,7 +157,6 @@
             });
         });
 
-        // 表單提交時添加或更新交易到 Firestore
         document.getElementById('transaction-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -168,7 +169,6 @@
 
             try {
                 if (transactionId) {
-                    // 更新現有交易
                     const transactionDoc = doc(db, "transactions", transactionId);
                     await updateDoc(transactionDoc, {
                         date,
@@ -177,9 +177,8 @@
                         type,
                         username: currentUser
                     });
-                    document.getElementById('transaction-id').value = ""; // 清空交易ID
+                    document.getElementById('transaction-id').value = "";
                 } else {
-                    // 添加新交易
                     await addDoc(collection(db, "transactions"), {
                         date,
                         description,
@@ -188,7 +187,7 @@
                         username: currentUser
                     });
                 }
-                calculateAndRenderBalance(); // 更新交易後重新計算餘額
+                calculateAndRenderBalance();
             } catch (error) {
                 console.error("Error saving transaction: ", error);
             }
@@ -196,9 +195,9 @@
             document.getElementById('transaction-form').reset();
         });
 
-        // 頁面加載時計算初始餘額
         calculateAndRenderBalance();
     </script>
+
 
     <script>
         const currentUser = sessionStorage.getItem('currentUser');
