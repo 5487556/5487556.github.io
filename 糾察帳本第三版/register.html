@@ -24,11 +24,11 @@
     </div>
 
     <script type="module">
-        // Import the functions you need from the SDKs you need
+        // 從 SDK 中導入所需的功能
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
-        // Your web app's Firebase configuration
+        // Firebase 配置
         const firebaseConfig = {
             apiKey: "AIzaSyAfl3_gvgBLwGulnRywmEg2VJdvb_7pCtw",
             authDomain: "user-63855.firebaseapp.com",
@@ -39,35 +39,44 @@
             measurementId: "G-5430BVYG68"
         };
 
-        // Initialize Firebase
+        // 初始化 Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Get the form element
+        // 獲取表單元素
         const form = document.getElementById('register-form');
 
-        // Add an event listener to the form
-        form.addEventListener('submit', (e) => {
+        // 為表單添加提交事件監聽器
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // Get the username and password values
+            // 獲取用戶名和密碼值
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            // Add the user to the Firestore database
-            addDoc(collection(db, 'users'), {
-                username: username,
-                password: password
-            })
-                .then((docRef) => {
+            try {
+                // 查詢是否存在相同用戶名
+                const q = query(collection(db, 'users'), where('username', '==', username));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    // 如果用戶名已經存在
+                    alert('用戶名已被註冊,請直接登入,忘記密碼請私訊 ig:lyscnf23');
+                } else {
+                    // 如果用戶名不存在，將新用戶添加到 Firestore
+                    await addDoc(collection(db, 'users'), {
+                        username: username,
+                        password: password
+                    });
                     console.log('用戶添加成功！');
-                    // You can redirect the user to a login page or show a success message here
                     alert('用戶添加成功！');
-                })
-                .catch((error) => {
-                    console.error('添加用戶錯誤：', error);
-                    alert('添加用戶錯誤：' + error.message);
-                });
+                    // 可選：重定向到登入頁面
+                    // window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error('添加用戶錯誤：', error);
+                alert('添加用戶錯誤：' + error.message);
+            }
         });
     </script>
 
