@@ -38,6 +38,7 @@
             </select>
 
             <input type="submit" value="添加">
+            <input type="hidden" id="transaction-id"> <!-- 用于保存当前正在编辑的交易ID -->
         </form>
 
         <h3>交易紀錄</h3>
@@ -62,11 +63,10 @@
         <p>&copy; 糾察帳本網站</p>
     </footer>
 
-
     <!--交易儲存在這-->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBN2EO-PDit2EoNoS2kgMiYXMM09IH_6aE",
@@ -83,12 +83,12 @@
 
         let cashBalance = 0;
 
-        // Function to update the displayed cash balance
+        // 更新顯示的現金餘額
         function updateCashBalance() {
             document.getElementById('cash-balance').textContent = `${cashBalance} 元`;
         }
 
-        // Function to render transaction data to the table
+        // 將交易數據渲染到表格中
         function renderTransaction(doc) {
             const data = doc.data();
             const row = document.createElement('tr');
@@ -98,39 +98,56 @@
                 <td>${data.amount} 元</td>
                 <td>${data.type === 'income' ? '收入' : '支出'}</td>
                 <td>${data.username}</td>
-                <td><button data-id="${doc.id}">刪除</button></td>
+                <td><button data-id="${doc.id}">編輯</button></td>
             `;
             document.querySelector('tbody').appendChild(row);
 
-            // Add event listener for the delete button
-            row.querySelector('button').addEventListener('click', async (e) => {
-                const id = e.target.getAttribute('data-id');
-                await deleteDoc(doc(db, "transactions", id));
-                calculateAndRenderBalance(); // Recalculate and update balance after deletion
+            // 添加編輯按鈕的事件監聽器
+            row.querySelector('button').addEventListener('click', () => {
+                document.getElementById('transaction-id').value = doc.id;
+                document.getElementById('date').value = data.date;
+                document.getElementById('description').value = data.description;
+                document.getElementById('amount').value = data.amount;
+                document.getElementById('type').value = data.type;
             });
         }
 
-        // Function to calculate and update the balance
+        // 計算並更新餘額
         async function calculateAndRenderBalance() {
-            cashBalance = 0; // Reset cash balance
+            cashBalance = 0; // 重置現金餘額
             const querySnapshot = await getDocs(collection(db, "transactions"));
-            document.querySelector('tbody').innerHTML = ""; // Clear existing table rows
-            
+            const transactions = [];
+
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                if (data.type === 'income') {
-                    cashBalance += data.amount;
-                } else if (data.type === 'expense') {
-                    cashBalance -= data.amount;
-                }
-                renderTransaction(doc);
+                transactions.push({
+                    id: doc.id,
+                    ...data
+                });
             });
+
+            // 按日期從新到舊排序
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            document.querySelector('tbody').innerHTML = ""; // 清空現有的表格行
+
+            transactions.forEach((transaction) => {
+                if (transaction.type === 'income') {
+                    cashBalance += transaction.amount;
+                } else if (transaction.type === 'expense') {
+                    cashBalance -= transaction.amount;
+                }
+                renderTransaction({
+                    id: transaction.id,
+                    data: () => transaction
+                });
+            });
+
             updateCashBalance();
         }
 
-        // Real-time listener to fetch data from Firestore and update the UI
+        // 實時監聽並更新交易記錄
         onSnapshot(collection(db, "transactions"), (snapshot) => {
-            // Only re-render the transactions list, do not update the balance
             const transactionList = document.querySelector('tbody');
             transactionList.innerHTML = "";
             snapshot.forEach((doc) => {
@@ -138,39 +155,55 @@
             });
         });
 
-        // Add a new transaction to Firestore when the form is submitted
+        // 表單提交時添加或更新交易到 Firestore
         document.getElementById('transaction-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const date = document.getElementById('date').value;
             const description = document.getElementById('description').value;
             const amount = parseFloat(document.getElementById('amount').value);
             const type = document.getElementById('type').value;
             const currentUser = sessionStorage.getItem('currentUser');
-            
+            const transactionId = document.getElementById('transaction-id').value;
+
             try {
-                await addDoc(collection(db, "transactions"), {
-                    date,
-                    description,
-                    amount,
-                    type,
-                    username: currentUser
-                });
-                calculateAndRenderBalance(); // Recalculate balance after adding a new transaction
+                if (transactionId) {
+                    // 更新現有交易
+                    const transactionDoc = doc(db, "transactions", transactionId);
+                    await updateDoc(transactionDoc, {
+                        date,
+                        description,
+                        amount,
+                        type,
+                        username: currentUser
+                    });
+                    document.getElementById('transaction-id').value = ""; // 清空交易ID
+                } else {
+                    // 添加新交易
+                    await addDoc(collection(db, "transactions"), {
+                        date,
+                        description,
+                        amount,
+                        type,
+                        username: currentUser
+                    });
+                }
+                calculateAndRenderBalance(); // 更新交易後重新計算餘額
             } catch (error) {
-                console.error("Error adding transaction: ", error);
+                console.error("Error saving transaction: ", error);
             }
 
             document.getElementById('transaction-form').reset();
         });
 
-        // Calculate initial balance on page load
+        // 頁面加載時計算初始餘額
         calculateAndRenderBalance();
     </script>
 
+    <script>
+        const currentUser = sessionStorage.getItem('currentUser');
+        document.querySelector('h2').textContent = `歡迎，${currentUser}！`;
+    </script>
 </body>
-<script>
-    const currentUser = sessionStorage.getItem('currentUser');
-    document.querySelector('h2').textContent = `歡迎，${currentUser}！`;
-</script>
+
 </html>
