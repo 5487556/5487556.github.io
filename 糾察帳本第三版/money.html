@@ -105,7 +105,7 @@
                 const transactionUser = e.target.getAttribute('data-username');
 
                 // 允许 @961004 特权用户编辑任何交易
-                if (currentUser === transactionUser || currentUser === "@961004") {
+                if (currentUser === transactionUser || currentUser === "lys1004") {
                     document.getElementById('transaction-id').value = doc.id;
                     document.getElementById('date').value = data.date;
                     document.getElementById('description').value = data.description;
